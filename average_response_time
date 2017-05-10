@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Simple script to read through a file, working out how many transactions took more than $timeout seconds, and then express this as a percentage of the total
+
+for timeout in {1..15}
+  do echo -e "Timeout ${timeout} seconds, percent loss \c" 
+  export timeout
+  echo $(cat /tmp/input  |awk '{print $23}' |tr '"' ' ' | awk '$1 > (ENVIRON["timeout"])' |wc -l)  / 5101 | bc -l |cut -b 1-4 
+done
