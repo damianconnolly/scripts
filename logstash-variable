@@ -1,0 +1,94 @@
+#! /bin/sh
+#
+###########################################################
+## THIS FILE IS MANAGED BY PUPPET - DO NOT MANUALLY EDIT ##
+###########################################################
+#
+# chkconfig: 345 91 1
+# description: Logstash service init script
+# author: Kevin Groom-Shorter 22/06/15 1.0
+# upversioned: Damian Connolly 10/05/17 2.0
+# 2.0 Release notes 
+# This script now supports multiple instances of Logstash on a single host.
+# To create an additional logstash, you must first create a new logstash conf file in /opt/logstash, ie /opt/logstash/logstash-newservice.conf where your service is called "newservice"
+# This init script should then be copied in as /etc/init.d/logstash-newservice. No changes are required to the init script, although the "newservice" name given to the conf file and the init file must match and the "logstash-xxxx" format must be adhered to.
+# Limitations: Please do not use more than one dash in the service name. logstash-searchapplication will work - logstash-search-application will not! 
+
+### BEGIN INIT INFO
+# Provides: logstash
+# Required-Start: $network $local_fs
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+# Short-Description: Logstash service init script
+# Description: Starts and stops logstash to monitor logs
+### END INIT INFO
+
+PARAMETER=$(echo ${0} |awk -F '-' '{print $2}')
+! [[ -z ${PARAMETER} ]]  &&  CONFTYPE=-${PARAMETER} 
+USER=logstash # this can stay the same
+PROCESS_STRING="^.*java.*logstash${CONFTYPE}" 
+# ^^  this is used to decipher each logstash process from eachother. Default one must be updated to search for "^.*java.*logstash.conf" - the .conf will stop it from affecting paybook
+LOGSTASH_BIN="/opt/logstash/bin/logstash" # this can stay the same
+LOGSTASH_CONF="/opt/logstash/logstash${CONFTYPE}.conf" # this is set correctly
+LOGSTASH_LOG="/var/log/logstash/logstash${CONFTYPE}.log" # this is set correctly 
+
+start () {
+    PID=`/usr/bin/pgrep -f $PROCESS_STRING`
+    if [ "$PID" != "" ]; then
+        /bin/echo "Logstash ${PARAMETER} is already running (pid: $PID)"
+    else    
+        su - $USER -c "nohup ${LOGSTASH_BIN} agent --verbose -f ${LOGSTASH_CONF} --log ${LOGSTASH_LOG} >/dev/null 2>&1 &"
+    fi
+    RETVAL=$?
+}
+
+stop () {
+    PID=`/usr/bin/pgrep -f $PROCESS_STRING`
+    if [ "$PID" = "" ]; then
+        /bin/echo "Logstash  ${PARAMETER} is not running."
+        exit 1
+    else
+        kill $PID
+        RETVAL=$?
+    fi
+}
+
+status() {
+    PID=`/usr/bin/pgrep -f $PROCESS_STRING`
+    if [ "$PID" != "" ]; then
+        /bin/echo "Logstash ${PARAMETER} is running (pid: $PID)"
+        exit 0
+    else
+        /bin/echo "Logstash ${PARAMETER} is stopped"
+        exit 1
+    fi
+}
+
+restart() {
+    stop
+    sleep 10
+    start
+}
+
+case $1 in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $RETVAL
