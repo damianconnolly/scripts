@@ -6,8 +6,7 @@
 #
 # chkconfig: 345 91 1
 # description: Logstash service init script
-# author: Kevin Groom-Shorter 22/06/15 1.0
-# upversioned: Damian Connolly 10/05/17 2.0
+# author: Damian Connolly 10/05/17 2.0
 # 2.0 Release notes 
 # This script now supports multiple instances of Logstash on a single host.
 # To create an additional logstash, you must first create a new logstash conf file in /opt/logstash, ie /opt/logstash/logstash-newservice.conf where your service is called "newservice"
